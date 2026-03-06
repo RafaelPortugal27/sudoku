@@ -1,0 +1,40 @@
+.sudoku-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: #f5f7fa;
+}
+
+.sudoku-grid {
+  display: grid;
+  grid-template-columns: repeat(9, 48px);
+  grid-template-rows: repeat(9, 48px);
+  gap: 0;
+  border: 3px solid #333;
+  background: #333;
+}
+
+.sudoku-cell {
+  width: 48px;
+  height: 48px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 600;
+  border: 1px solid #ccc;
+  outline: none;
+  background: #fff;
+  cursor: pointer;
+}
+
+.sudoku-cell:focus {
+  background: #e3f2fd;
+}
+
+.border-right {
+  border-right: 3px solid #333;
+}
+
+.border-bottom {
+  border-bottom: 3px solid #333;
+}
