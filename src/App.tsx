@@ -32,22 +32,7 @@ const SOLUTION = [
 
 function App() {
   return (
-     <div
-      style={{
-        minHeight: "100vh",
-        background: "#0f0f13",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        fontFamily: "'Georgia', serif",
-        padding: "20px",
-      }}
-    >
-      <div className="sudoku-title">Sudoku</div>
-      <div className="sudoku-sub">Classic 9 × 9</div>
-      <SudokuBoard initialBoard={PUZZLE} solutionBoard={SOLUTION} />
-    </div>
+     <SudokuBoard initialBoard={PUZZLE} solutionBoard={SOLUTION} />
   )
 }
 

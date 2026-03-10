@@ -1,6 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Mono:wght@300;400&display=swap');
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+.sudoku-box { 
+  box-sizing: border-box; 
+  margin: 0; 
+  padding: 0; 
+}
 
 .sudoku-title {
   font-family: 'Playfair Display', serif;
@@ -143,6 +147,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: inherit;
 }
 .num-btn:hover  { background: #22222e; border-color: #e8d5a3; color: #e8d5a3; transform: translateY(-1px); }
 .num-btn:active { transform: translateY(0); }

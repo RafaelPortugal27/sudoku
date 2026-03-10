@@ -160,6 +160,7 @@ export default function SudokuBoard({ initialBoard, solutionBoard }: SudokuBoard
 
   return (
     <div
+      className="sudoku-box"
       style={{
         minHeight: "100vh",
         background: "#0f0f13",
@@ -171,6 +172,8 @@ export default function SudokuBoard({ initialBoard, solutionBoard }: SudokuBoard
         padding: "20px",
       }}
     >
+      <div className="sudoku-title">Sudoku</div>
+      <div className="sudoku-sub">Classic 9 × 9</div>
       {/* ── Stats bar ── */}
       <div className="stats-row">
         <div className="stat">
