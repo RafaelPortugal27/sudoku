@@ -32,13 +32,47 @@ function formatTime(seconds: number): string {
   return `${m}:${s}`;
 }
 
+/**
+ * Returns true if placing `num` at (row, col) conflicts with any
+ * existing value in the same row, column, or 3×3 box.
+ */
+function hasDuplicate(board: Board, row: number, col: number, num: number): boolean {
+  for (let i = 0; i < 9; i++) {
+    // Same row (skip self)
+    if (i !== col && board[row][i].value === num) return true;
+    // Same column (skip self)
+    if (i !== row && board[i][col].value === num) return true;
+  }
+  // Same 3×3 box
+  const boxRow = Math.floor(row / 3) * 3;
+  const boxCol = Math.floor(col / 3) * 3;
+  for (let r = boxRow; r < boxRow + 3; r++) {
+    for (let c = boxCol; c < boxCol + 3; c++) {
+      if ((r !== row || c !== col) && board[r][c].value === num) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * After mutating the board, re-evaluates errors for every non-given cell
+ * so that fixing a conflict clears the error on previously-flagged cells too.
+ */
+function revalidateBoard(board: Board): Board {
+  return board.map((row, r) =>
+    row.map((cell, c) => {
+      if (cell.given || cell.value === 0) return { ...cell, error: false };
+      return { ...cell, error: hasDuplicate(board, r, c, cell.value) };
+    })
+  );
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 type SudokuBoardProps = {
   initialBoard: Grid;
-  solutionBoard: Grid;
 };
 
-export default function SudokuBoard({ initialBoard, solutionBoard }: SudokuBoardProps): JSX.Element {
+export default function SudokuBoard({ initialBoard }: SudokuBoardProps): JSX.Element {
   const [board, setBoard] = useState<Board>(initBoard(initialBoard));
   const [selected, setSelected] = useState<Position>(null);
   const [notesMode, setNotesMode] = useState<boolean>(false);
@@ -46,17 +80,22 @@ export default function SudokuBoard({ initialBoard, solutionBoard }: SudokuBoard
   const [mistakes, setMistakes] = useState<number>(0);
   const [time, setTime] = useState<number>(0);
   const [running, setRunning] = useState<boolean>(true);
+  const [paused, setPaused] = useState<boolean>(false);
 
   // ── Timer ──────────────────────────────────────────────────────────────────
-
   useEffect(() => {
-    if (!running || completed) return;
+    if (!running || completed || paused) return;
     const id = setInterval(() => setTime((t) => t + 1), 1000);
     return () => clearInterval(id);
-  }, [running, completed]);
+  }, [running, completed, paused]);
+
+  // ── Play / Pause ───────────────────────────────────────────────────────────
+  const togglePause = (): void => {
+    setPaused((p) => !p);
+    setSelected(null);
+  };
 
   // ── Cell state helpers ─────────────────────────────────────────────────────
-
   const isSelected = (r: number, c: number): boolean =>
     selected !== null && selected[0] === r && selected[1] === c;
 
@@ -83,14 +122,13 @@ export default function SudokuBoard({ initialBoard, solutionBoard }: SudokuBoard
   );
 
   // ── Input handler ──────────────────────────────────────────────────────────
-
   const handleInput = useCallback(
     (num: number): void => {
-      if (!selected) return;
+      if (!selected || paused) return;
       const [r, c] = selected;
       if (board[r][c].given) return;
 
-      const newBoard: Board = board.map((row) =>
+      let newBoard: Board = board.map((row) =>
         row.map((cell) => ({ ...cell, notes: [...cell.notes] }))
       );
 
@@ -100,35 +138,35 @@ export default function SudokuBoard({ initialBoard, solutionBoard }: SudokuBoard
           ? notes.filter((n) => n !== num)
           : [...notes, num].sort((a, b) => a - b);
         newBoard[r][c].value = 0;
+        newBoard[r][c].error = false;
       } else {
         newBoard[r][c].value = num;
         newBoard[r][c].notes = [];
-        if (num !== 0) {
-          const correct = solutionBoard[r][c] === num;
-          newBoard[r][c].error = !correct;
-          if (!correct) setMistakes((m) => m + 1);
-        } else {
-          newBoard[r][c].error = false;
+        // Re-validate entire board so removing a conflict clears sibling errors
+        newBoard = revalidateBoard(newBoard);
+        if (num !== 0 && newBoard[r][c].error) {
+          setMistakes((m) => m + 1);
         }
       }
 
       setBoard(newBoard);
 
-      const done = newBoard.every((row, ri) =>
-        row.every((cell, ci) => cell.value === solutionBoard[ri][ci])
+      // Win: all cells filled, no errors
+      const done = newBoard.every((row) =>
+        row.every((cell) => cell.value !== 0 && !cell.error)
       );
       if (done) {
         setCompleted(true);
         setRunning(false);
       }
     },
-    [selected, board, notesMode]
+    [selected, board, notesMode, paused]
   );
 
   // ── Keyboard navigation ────────────────────────────────────────────────────
-
   useEffect(() => {
     const handler = (e: KeyboardEvent): void => {
+      if (paused) return;
       const n = parseInt(e.key, 10);
       if (n >= 1 && n <= 9) handleInput(n);
       if (e.key === "Backspace" || e.key === "Delete") handleInput(0);
@@ -142,10 +180,9 @@ export default function SudokuBoard({ initialBoard, solutionBoard }: SudokuBoard
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [handleInput, selected]);
+  }, [handleInput, selected, paused]);
 
   // ── Reset ──────────────────────────────────────────────────────────────────
-
   const resetGame = (): void => {
     setBoard(initBoard(initialBoard));
     setSelected(null);
@@ -153,11 +190,11 @@ export default function SudokuBoard({ initialBoard, solutionBoard }: SudokuBoard
     setMistakes(0);
     setTime(0);
     setRunning(true);
+    setPaused(false);
     setNotesMode(false);
   };
 
   // ─── Render ────────────────────────────────────────────────────────────────
-
   return (
     <div
       className="sudoku-box"
@@ -173,12 +210,14 @@ export default function SudokuBoard({ initialBoard, solutionBoard }: SudokuBoard
     >
       <div className="sudoku-title">Sudoku</div>
       <div className="sudoku-sub">Classic 9 × 9</div>
+
       {/* ── Stats bar ── */}
       <div className="stats-row">
         <div className="stat">
           <span className="stat-val">{formatTime(time)}</span>
           Tempo
         </div>
+
         <div className="stat">
           <span
             className="stat-val"
@@ -195,97 +234,120 @@ export default function SudokuBoard({ initialBoard, solutionBoard }: SudokuBoard
           </span>
           Erros
         </div>
-        <button className="mode-btn" onClick={resetGame} style={{ marginLeft: 8 }}>
+
+        {/* Play / Pause */}
+        <button
+          className={`mode-btn ${paused ? "active" : ""}`}
+          onClick={togglePause}
+          title={paused ? "Continuar" : "Pausar"}
+        >
+          {paused ? "▶ Continuar" : "⏸ Pausar"}
+        </button>
+
+        <button className="mode-btn" onClick={resetGame} style={{ marginLeft: 4 }}>
           ↺ Novo Jogo
         </button>
       </div>
 
-      {/* ── Board ── */}
-      <div className="board-wrap">
-        {board.map((row, r) => (
-          <div className="board-row" key={r}>
-            {row.map((cell, c) => {
-              const boxR = c === 2 || c === 5;
-              const boxB = r === 2 || r === 5;
-              const sel = isSelected(r, c);
-              const hl  = getHighlighted(r, c);
-              const sv  = getSameValue(r, c);
+      {/* ── Board or Pause screen ── */}
+      {paused ? (
+        <div className="pause-screen">
+          <div className="pause-icon">⏸</div>
+          <div className="pause-label">Jogo Pausado</div>
+          <div className="pause-time">{formatTime(time)}</div>
+          <button className="new-game-btn" onClick={togglePause}>
+            ▶ Continuar
+          </button>
+        </div>
+      ) : (
+        <>
+          <div className="board-wrap">
+            {board.map((row, r) => (
+              <div className="board-row" key={r}>
+                {row.map((cell, c) => {
+                  const boxR = c === 2 || c === 5;
+                  const boxB = r === 2 || r === 5;
+                  const sel = isSelected(r, c);
+                  const hl  = getHighlighted(r, c);
+                  const sv  = getSameValue(r, c);
 
-              let cls = "cell";
-              if (sel)                           cls += " selected";
-              else if (sv)                       cls += " same-value";
-              else if (hl)                       cls += " highlighted";
-              if (cell.error && cell.value !== 0) cls += " error-cell";
-              if (boxR) cls += " box-right";
-              if (boxB) cls += " box-bottom";
+                  let cls = "cell";
+                  if (sel)                            cls += " selected";
+                  else if (sv)                        cls += " same-value";
+                  else if (hl)                        cls += " highlighted";
+                  if (cell.error && cell.value !== 0) cls += " error-cell";
+                  if (boxR) cls += " box-right";
+                  if (boxB) cls += " box-bottom";
 
-              return (
-                <div key={c} className={cls} onClick={() => setSelected([r, c])}>
-                  {cell.value !== 0 ? (
-                    <span
-                      className={`cell-value ${
-                        cell.given ? "given" : cell.error ? "error" : "user"
-                      }`}
-                    >
-                      {cell.value}
-                    </span>
-                  ) : cell.notes.length > 0 ? (
-                    <div className="notes-grid">
-                      {([1, 2, 3, 4, 5, 6, 7, 8, 9] as const).map((n) => (
-                        <div className="note-num" key={n}>
-                          {cell.notes.includes(n) ? n : ""}
+                  return (
+                    <div key={c} className={cls} onClick={() => setSelected([r, c])}>
+                      {cell.value !== 0 ? (
+                        <span
+                          className={`cell-value ${
+                            cell.given ? "given" : cell.error ? "error" : "user"
+                          }`}
+                        >
+                          {cell.value}
+                        </span>
+                      ) : cell.notes.length > 0 ? (
+                        <div className="notes-grid">
+                          {([1, 2, 3, 4, 5, 6, 7, 8, 9] as const).map((n) => (
+                            <div className="note-num" key={n}>
+                              {cell.notes.includes(n) ? n : ""}
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      ) : null}
                     </div>
-                  ) : null}
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
 
-      {/* ── Controls ── */}
-      <div className="controls">
-        <div className="mode-row">
-          <div style={{ display: "flex", gap: 8 }}>
-            <button
-              className={`mode-btn ${!notesMode ? "active" : ""}`}
-              onClick={() => setNotesMode(false)}
-            >
-              ✏ Normal
-            </button>
-            <button
-              className={`mode-btn ${notesMode ? "active" : ""}`}
-              onClick={() => setNotesMode(true)}
-            >
-              ✦ Notas
+          {/* ── Controls ── */}
+          <div className="controls">
+            <div className="mode-row">
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  className={`mode-btn ${!notesMode ? "active" : ""}`}
+                  onClick={() => setNotesMode(false)}
+                >
+                  ✏ Normal
+                </button>
+                <button
+                  className={`mode-btn ${notesMode ? "active" : ""}`}
+                  onClick={() => setNotesMode(true)}
+                >
+                  ✦ Notas
+                </button>
+              </div>
+              <span
+                style={{
+                  fontFamily: "DM Mono",
+                  fontSize: "0.7rem",
+                  color: notesMode ? "#7a9e7a" : "#555",
+                  letterSpacing: "0.1em",
+                }}
+              >
+                {notesMode ? "MODO NOTAS ATIVO" : "MODO NORMAL"}
+              </span>
+            </div>
+
+            <div className="numpad">
+              {([1, 2, 3, 4, 5, 6, 7, 8, 9] as const).map((n) => (
+                <button key={n} className="num-btn" onClick={() => handleInput(n)}>
+                  {n}
+                </button>
+              ))}
+            </div>
+
+            <button className="erase-btn" onClick={() => handleInput(0)}>
+              ✕ Apagar
             </button>
           </div>
-          <span
-            style={{
-              fontFamily: "DM Mono",
-              fontSize: "0.7rem",
-              color: notesMode ? "#7a9e7a" : "#555",
-              letterSpacing: "0.1em",
-            }}
-          >
-            {notesMode ? "MODO NOTAS ATIVO" : "MODO NORMAL"}
-          </span>
-        </div>
-
-        <div className="numpad">
-          {([1, 2, 3, 4, 5, 6, 7, 8, 9] as const).map((n) => (
-            <button key={n} className="num-btn" onClick={() => handleInput(n)}>
-              {n}
-            </button>
-          ))}
-        </div>
-
-        <button className="erase-btn" onClick={() => handleInput(0)}>
-          ✕ Apagar
-        </button>
-      </div>
+        </>
+      )}
 
       {/* ── Win overlay ── */}
       {completed && (

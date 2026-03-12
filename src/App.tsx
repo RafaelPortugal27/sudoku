@@ -32,7 +32,7 @@ const SOLUTION = [
 
 function App() {
   return (
-     <SudokuBoard initialBoard={PUZZLE} solutionBoard={SOLUTION} />
+     <SudokuBoard initialBoard={PUZZLE} />
   )
 }
 
