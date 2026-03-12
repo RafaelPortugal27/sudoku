@@ -163,7 +163,6 @@ export default function SudokuBoard({ initialBoard, solutionBoard }: SudokuBoard
       className="sudoku-box"
       style={{
         minHeight: "100vh",
-        background: "#0f0f13",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
