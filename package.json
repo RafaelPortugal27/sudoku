@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://rafaelportugal27.github.io/sudoku",
+  "homepage": "https://rafaelportugal27.github.io/sudoku/",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
