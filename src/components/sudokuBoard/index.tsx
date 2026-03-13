@@ -95,7 +95,7 @@ export default function SudokuBoard({ initialBoard }: SudokuBoardProps): JSX.Ele
       if (!selected) return false;
       const [sr, sc] = selected;
       const sv = board[sr][sc].value;
-      return sv !== 0 && board[r][c].value === sv;
+      return sv !== 0 && (board[r][c].value === sv || board[r][c].notes.includes(sv));
     },
     [selected, board]
   );
