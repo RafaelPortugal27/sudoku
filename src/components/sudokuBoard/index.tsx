@@ -4,6 +4,7 @@ import initBoard from "../../utils/initBoard";
 import revalidateBoard from "../../utils/revalidateBoard";
 import formatTime from "../../utils/formatTime";
 import WinOverlay from "../winOverlay";
+import StatsBar from "../statsBar";
 import './sudokuBoard.css';
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -15,7 +16,7 @@ export default function SudokuBoard({ initialBoard }: SudokuBoardProps): JSX.Ele
   const [board, setBoard] = useState<Board>(initBoard(initialBoard));
   const [selected, setSelected] = useState<Position>(null);
   const [notesMode, setNotesMode] = useState<boolean>(false);
-  const [completed, setCompleted] = useState<boolean>(true);
+  const [completed, setCompleted] = useState<boolean>(false);
   const [mistakes, setMistakes] = useState<number>(0);
   const [time, setTime] = useState<number>(0);
   const [running, setRunning] = useState<boolean>(true);
@@ -151,42 +152,13 @@ export default function SudokuBoard({ initialBoard }: SudokuBoardProps): JSX.Ele
       <div className="sudoku-sub">Classic 9 × 9</div>
 
       {/* ── Stats bar ── */}
-      <div className="stats-row">
-        <div className="stat">
-          <span className="stat-val">{formatTime(time)}</span>
-          Tempo
-        </div>
-
-        <div className="stat">
-          <span
-            className="stat-val"
-            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}
-          >
-            {[0, 1, 2].map((i) => (
-              <span key={i} className="mistakes-dot" style={{ opacity: i < mistakes ? 1 : 0.15 }} />
-            ))}
-            {mistakes > 3 && (
-              <span style={{ fontFamily: "DM Mono", fontSize: "0.9rem", color: "#e87a7a" }}>
-                {mistakes}
-              </span>
-            )}
-          </span>
-          Erros
-        </div>
-
-        {/* Play / Pause */}
-        <button
-          className={`mode-btn ${paused ? "active" : ""}`}
-          onClick={togglePause}
-          title={paused ? "Continuar" : "Pausar"}
-        >
-          {paused ? "▶ Continuar" : "⏸ Pausar"}
-        </button>
-
-        <button className="mode-btn" onClick={resetGame} style={{ marginLeft: 4 }}>
-          ↺ Novo Jogo
-        </button>
-      </div>
+      <StatsBar 
+        formatedTime={formatTime(time)}
+        mistakes={mistakes}
+        paused={paused}
+        onClickPause={togglePause}
+        onResetGame={resetGame}
+      />
 
       {/* ── Board or Pause screen ── */}
       {paused ? (
@@ -211,9 +183,9 @@ export default function SudokuBoard({ initialBoard }: SudokuBoardProps): JSX.Ele
                   const sv  = getSameValue(r, c);
 
                   let cls = "cell";
-                  if (sel)                            cls += " selected";
-                  else if (sv)                        cls += " same-value";
-                  else if (hl)                        cls += " highlighted";
+                  if (sel)  cls += " selected";
+                  else if (sv) cls += " same-value";
+                  else if (hl) cls += " highlighted";
                   if (cell.error && cell.value !== 0) cls += " error-cell";
                   if (boxR) cls += " box-right";
                   if (boxB) cls += " box-bottom";

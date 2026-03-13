@@ -21,24 +21,7 @@
   text-transform: uppercase;
   margin-bottom: 24px;
 }
-.stats-row {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 20px;
-  align-items: center;
-}
-.stat {
-  font-family: 'DM Mono', monospace;
-  font-size: 0.8rem;
-  color: #888;
-  text-align: center;
-}
-.stat-val {
-  display: block;
-  font-size: 1.1rem;
-  color: #e8d5a3;
-  font-weight: 400;
-}
+
 .board-wrap {
   border: 2px solid #3a3a4a;
   border-radius: 4px;
@@ -220,10 +203,3 @@
   transition: opacity 0.15s;
 }
 .new-game-btn:hover { opacity: 0.85; }
-.mistakes-dot {
-  display: inline-block;
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: #e87a7a;
-  margin: 0 2px;
-}

@@ -35,3 +35,18 @@
   justify-content: center;
   margin-bottom: 32px;
 }
+
+.new-game-btn {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 12px 32px;
+  background: #e8d5a3;
+  color: #0f0f13;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.new-game-btn:hover { opacity: 0.85; }
