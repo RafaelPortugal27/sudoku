@@ -6,9 +6,10 @@ type StatsBarProps = {
   paused: boolean;
   onClickPause: () => void;
   onResetGame: () => void;
+  onClickPuzzles: () => void;
 }
 
-export default function StatsBar({ formatedTime, mistakes, paused, onClickPause, onResetGame }: StatsBarProps) {
+export default function StatsBar({ formatedTime, mistakes, paused, onClickPause, onResetGame, onClickPuzzles }: StatsBarProps) {
   return (<div className="stats-row">
     <div className="stat">
       <span className="stat-val">{formatedTime}</span>
@@ -42,7 +43,15 @@ export default function StatsBar({ formatedTime, mistakes, paused, onClickPause,
     </button>
 
     <button className="mode-btn" onClick={onResetGame} style={{ marginLeft: 4 }}>
-      ↺ Novo Jogo
+      ↺ Reiniciar
+    </button>
+
+    <button
+      className="mode-btn"
+      onClick={onClickPuzzles}
+      style={{ borderColor: "#e8d5a3", color: "#e8d5a3" }}
+    >
+      ☰ Puzzles
     </button>
   </div>)
 }

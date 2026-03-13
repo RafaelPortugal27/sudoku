@@ -3,6 +3,8 @@
   gap: 16px;
   margin-bottom: 20px;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 .stat {
   font-family: 'DM Mono', monospace;

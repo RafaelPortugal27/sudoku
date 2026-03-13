@@ -3,17 +3,23 @@ import type { Grid, Board, Position } from "../../utils/types";
 import initBoard from "../../utils/initBoard";
 import revalidateBoard from "../../utils/revalidateBoard";
 import formatTime from "../../utils/formatTime";
+import hasDuplicate from "../../utils/hasDuplicate";
+import PUZZLE_LIBRARY from "../../utils/PUZZLE_LIBRARY";
 import WinOverlay from "../winOverlay";
 import StatsBar from "../statsBar";
+import PuzzleSelectorModal from "../PuzzleSelectorModal";
 import './sudokuBoard.css';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 type SudokuBoardProps = {
-  initialBoard: Grid;
+  initialBoard?: Grid;
 };
 
 export default function SudokuBoard({ initialBoard }: SudokuBoardProps): JSX.Element {
-  const [board, setBoard] = useState<Board>(initBoard(initialBoard));
+  const firstPuzzle = initialBoard ?? PUZZLE_LIBRARY[0].grid;
+  const [currentPuzzle, setCurrentPuzzle] = useState<Grid>(firstPuzzle);
+
+  const [board, setBoard] = useState<Board>(initBoard(firstPuzzle));
   const [selected, setSelected] = useState<Position>(null);
   const [notesMode, setNotesMode] = useState<boolean>(false);
   const [completed, setCompleted] = useState<boolean>(false);
@@ -22,12 +28,45 @@ export default function SudokuBoard({ initialBoard }: SudokuBoardProps): JSX.Ele
   const [running, setRunning] = useState<boolean>(true);
   const [paused, setPaused] = useState<boolean>(false);
 
+  const [showSelector, setShowSelector] = useState<boolean>(false);
+
   // ── Timer ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!running || completed || paused) return;
     const id = setInterval(() => setTime((t) => t + 1), 1000);
     return () => clearInterval(id);
   }, [running, completed, paused]);
+
+  // ── Start puzzle ───────────────────────────────────────────────────────────
+  const startPuzzle = useCallback((grid: Grid) => {
+    setCurrentPuzzle(grid);
+    setBoard(initBoard(grid));
+    setSelected(null);
+    setCompleted(false);
+    setMistakes(0);
+    setTime(0);
+    setRunning(true);
+    setPaused(false);
+    setNotesMode(false);
+    setShowSelector(false);
+  }, []);
+
+  // ── Auto-fill notes ────────────────────────────────────────────────────────
+  const autoFillNotes = useCallback(() => {
+    if (paused || completed) return;
+    setBoard((prev) =>
+      prev.map((row, r) =>
+        row.map((cell, c) => {
+          if (cell.value !== 0) return cell;
+          const possible: number[] = [];
+          for (let n = 1; n <= 9; n++) {
+            if (!hasDuplicate(prev, r, c, n)) possible.push(n);
+          }
+          return { ...cell, notes: possible };
+        })
+      )
+    );
+  }, [paused, completed]);
 
   // ── Play / Pause ───────────────────────────────────────────────────────────
   const togglePause = (): void => {
@@ -106,32 +145,25 @@ export default function SudokuBoard({ initialBoard }: SudokuBoardProps): JSX.Ele
   // ── Keyboard navigation ────────────────────────────────────────────────────
   useEffect(() => {
     const handler = (e: KeyboardEvent): void => {
-      if (paused) return;
+      if (paused || showSelector) return;
       const n = parseInt(e.key, 10);
       if (n >= 1 && n <= 9) handleInput(n);
       if (e.key === "Backspace" || e.key === "Delete") handleInput(0);
       if (selected) {
         const [r, c] = selected;
-        if (e.key === "ArrowUp")    setSelected([Math.max(0, r - 1), c]);
-        if (e.key === "ArrowDown")  setSelected([Math.min(8, r + 1), c]);
-        if (e.key === "ArrowLeft")  setSelected([r, Math.max(0, c - 1)]);
+        if (e.key === "ArrowUp") setSelected([Math.max(0, r - 1), c]);
+        if (e.key === "ArrowDown") setSelected([Math.min(8, r + 1), c]);
+        if (e.key === "ArrowLeft") setSelected([r, Math.max(0, c - 1)]);
         if (e.key === "ArrowRight") setSelected([r, Math.min(8, c + 1)]);
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [handleInput, selected, paused]);
+  }, [handleInput, selected, paused, showSelector]);
 
-  // ── Reset ──────────────────────────────────────────────────────────────────
+  // ── Reset (replay current puzzle) ─────────────────────────────────────────
   const resetGame = (): void => {
-    setBoard(initBoard(initialBoard));
-    setSelected(null);
-    setCompleted(false);
-    setMistakes(0);
-    setTime(0);
-    setRunning(true);
-    setPaused(false);
-    setNotesMode(false);
+    startPuzzle(currentPuzzle);
   };
 
   // ─── Render ────────────────────────────────────────────────────────────────
@@ -158,6 +190,7 @@ export default function SudokuBoard({ initialBoard }: SudokuBoardProps): JSX.Ele
         paused={paused}
         onClickPause={togglePause}
         onResetGame={resetGame}
+        onClickPuzzles={() => setShowSelector(true)}
       />
 
       {/* ── Board or Pause screen ── */}
@@ -245,6 +278,11 @@ export default function SudokuBoard({ initialBoard }: SudokuBoardProps): JSX.Ele
               </span>
             </div>
 
+            {/* ── Auto-fill notes button ── */}
+            <button className="auto-notes-btn" onClick={autoFillNotes}>
+              ◈ Preencher Notas Possíveis
+            </button>
+
             <div className="numpad">
               {([1, 2, 3, 4, 5, 6, 7, 8, 9] as const).map((n) => (
                 <button key={n} className="num-btn" onClick={() => handleInput(n)}>
@@ -261,8 +299,22 @@ export default function SudokuBoard({ initialBoard }: SudokuBoardProps): JSX.Ele
       )}
 
       {/* ── Win overlay ── */}
-      {completed && (<WinOverlay formatedFinalTime={formatTime(time)} mistakes={mistakes} onResetGame={resetGame}/>
-  
+      {completed && (
+        <WinOverlay
+          formatedFinalTime={formatTime(time)}
+          mistakes={mistakes}
+          onResetGame={resetGame}
+          onClickPuzzles={() => { setCompleted(false); setShowSelector(true); }} 
+        />
+      )}
+
+
+      {/* ── Puzzle Selector Modal ── */}
+      {showSelector && (
+        <PuzzleSelectorModal
+          onHideSelector={() => setShowSelector(false)}
+          onStartPuzzle={startPuzzle}
+        />
       )}
     </div>
   );

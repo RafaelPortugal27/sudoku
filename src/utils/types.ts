@@ -9,3 +9,11 @@ export interface Cell {
 
 export type Board = Cell[][];
 export type Position = [row: number, col: number] | null;
+
+export type Difficulty = "Fácil" | "Médio" | "Difícil";
+
+export interface PuzzleEntry {
+  id: string;
+  difficulty: Difficulty;
+  grid: Grid;
+}
