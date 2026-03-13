@@ -3,6 +3,7 @@ import type { Grid, Board, Position } from "../../utils/types";
 import initBoard from "../../utils/initBoard";
 import revalidateBoard from "../../utils/revalidateBoard";
 import formatTime from "../../utils/formatTime";
+import WinOverlay from "../winOverlay";
 import './sudokuBoard.css';
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -14,7 +15,7 @@ export default function SudokuBoard({ initialBoard }: SudokuBoardProps): JSX.Ele
   const [board, setBoard] = useState<Board>(initBoard(initialBoard));
   const [selected, setSelected] = useState<Position>(null);
   const [notesMode, setNotesMode] = useState<boolean>(false);
-  const [completed, setCompleted] = useState<boolean>(false);
+  const [completed, setCompleted] = useState<boolean>(true);
   const [mistakes, setMistakes] = useState<number>(0);
   const [time, setTime] = useState<number>(0);
   const [running, setRunning] = useState<boolean>(true);
@@ -288,31 +289,8 @@ export default function SudokuBoard({ initialBoard }: SudokuBoardProps): JSX.Ele
       )}
 
       {/* ── Win overlay ── */}
-      {completed && (
-        <div className="win-overlay">
-          <div className="win-card">
-            <div className="win-title">Parabéns!</div>
-            <div className="win-sub">Sudoku Completado</div>
-            <div className="win-stats">
-              <div className="stat">
-                <span className="stat-val">{formatTime(time)}</span>
-                Tempo Final
-              </div>
-              <div className="stat">
-                <span
-                  className="stat-val"
-                  style={{ color: mistakes === 0 ? "#7ae87a" : "#e87a7a" }}
-                >
-                  {mistakes}
-                </span>
-                Erros
-              </div>
-            </div>
-            <button className="new-game-btn" onClick={resetGame}>
-              Jogar Novamente
-            </button>
-          </div>
-        </div>
+      {completed && (<WinOverlay formatedFinalTime={formatTime(time)} mistakes={mistakes} onResetGame={resetGame}/>
+  
       )}
     </div>
   );
