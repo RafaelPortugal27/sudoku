@@ -1,0 +1,52 @@
+.win-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+}
+.win-card {
+  background: #1a1a24;
+  border: 1px solid #3a3a4a;
+  border-radius: 8px;
+  padding: 48px;
+  text-align: center;
+  box-shadow: 0 0 80px rgba(232,213,163,0.1);
+}
+.win-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.5rem;
+  color: #e8d5a3;
+  margin-bottom: 8px;
+}
+.win-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.8rem;
+  color: #888;
+  letter-spacing: 0.2em;
+  margin-bottom: 32px;
+}
+.win-stats {
+  display: flex;
+  gap: 32px;
+  justify-content: center;
+  margin-bottom: 32px;
+}
+
+.new-game-btn {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 12px 32px;
+  background: #e8d5a3;
+  color: #0f0f13;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.new-game-btn:hover { opacity: 0.85; }
